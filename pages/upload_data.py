@@ -4,31 +4,6 @@ from config import PREFIX, SFT_ROUND
 from utils.api import get_users, upload_zip_file
 from utils.data_processing import csv_to_json_zip
 
-def upload_data_page2():
-    st.header("Upload Data")
-
-    csv_file = st.file_uploader("Upload your enriched CSV file", type=["csv"])
-    if not csv_file:
-        return
-    df = pd.read_csv(csv_file)
-    df["sft_round"] = SFT_ROUND
-    df["original_id"] = df.get("original_id", PREFIX + (df.index + 1).astype(str).str.zfill(5))
-    st.dataframe(df.head())
-
-    if not st.session_state.user_data:
-        get_users()
-
-    run_id = st.text_input("Pipeline Run ID")
-    dataset_name = st.text_input("Dataset Name")
-
-    if st.button("Upload"):
-        if run_id and dataset_name:
-            zip_file = csv_to_json_zip(df)
-            upload_zip_file(zip_file, run_id, dataset_name)
-        else:
-            st.error("Please provide both Run ID and Dataset Name.")
-
-
 def upload_data_page():
     st.header("Upload Data")
     base_columns = ['uuid','original_id', 'sft_round', 'question', 'answer', 
@@ -59,21 +34,6 @@ def upload_data_page():
         df["is_valid"] = df["is_valid"] if "is_valid" in df.columns else ""
         df["assignee_name"] = df["assignee_name"] if "assignee_name" in df.columns else ""
         df["assignee"] = df["assignee"] if "assignee" in df.columns else ""
-        
-        # if "assignee_name" in df.columns:
-        #     if "user_data" in st.session_state and st.session_state.user_data:
-        #         # Create a mapping of username → user_id
-        #         name_to_id = {name: info["id"] for name, info in st.session_state.user_data.items() if "id" in info}
-
-        #         # Map assignee_name → user_id
-        #         df["assignee"] = df["assignee_name"].map(name_to_id).fillna("")
-        #     else:
-        #         st.warning("User data not loaded — assignee_name cannot be mapped to user IDs.")
-        #         df["assignee"] = ""
-        # else:
-        #     df["assignee"] = ""
-
-
         
         st.subheader("Random view of dataset")
         st.dataframe(df.sample(n=20))

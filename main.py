@@ -39,4 +39,5 @@ def main():
         recycle_page()
 
 if __name__ == "__main__":
+    # init_session_state()
     main()

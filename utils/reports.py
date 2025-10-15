@@ -1,5 +1,7 @@
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def generate_report(data):
     """Return simple completion report from pipeline data."""
