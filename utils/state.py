@@ -1,5 +1,6 @@
 import streamlit as st
 
+# @st.cache_resource
 def init_session_state():
     """
     Initialize all default Streamlit session state variables safely.
@@ -16,6 +17,10 @@ def init_session_state():
         # Data pipeline
         "pipeline_data": {},
         "pipeline_runs": [],
+
+        # Projects
+        "projects":{},
+        "datasets":{},
 
         # Reports and generated data
         "report_data": {},

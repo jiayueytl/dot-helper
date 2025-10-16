@@ -14,7 +14,7 @@ def generate_report(data):
     counts = df['status'].value_counts().reset_index()
     counts.columns = ['Status', 'Count']
     total = counts['Count'].sum()
-    if 'completed' in counts['Status'].values:
-        completed = counts.loc[counts['Status'] == 'completed', 'Count'].iloc[0]
+    if 'annotation_complete' in counts['Status'].values:
+        completed = counts.loc[counts['Status'] == 'annotation_complete', 'Count'].iloc[0]
         counts.loc[len(counts)] = ['Completion %', round((completed/total)*100, 2)]
     return counts

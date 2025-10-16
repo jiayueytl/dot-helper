@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from config import API_BASE_URL
 from typing import List, Dict
+import pandas as pd
 
 def get_users():
     if not st.session_state.token:
@@ -131,3 +132,138 @@ def bulk_update_pipeline(pipeline_run_id: str, update_data: Dict) -> bool:
     except Exception as e:
         st.error(f"Error during bulk update: {str(e)}")
         return False
+    
+def get_projects():
+    if not st.session_state.token:
+        st.error("Please login first")
+        return []
+
+    headers = {"Authorization": f"Bearer {st.session_state.token}"}
+    response = requests.get(f"{API_BASE_URL}/api/v1/projects", headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+
+        # ✅ safely get the list
+        projects = data.get("projects", [])
+
+        # store & return as a list of dicts
+        st.session_state.projects = projects
+        return projects
+
+    st.error(f"Failed to get projects: {response.text}")
+    return []
+
+
+def get_datasets_by_project(project_id: str):
+    """Fetch datasets for a given project."""
+    if not st.session_state.token:
+        st.error("Please login first")
+        return []
+
+    headers = {"Authorization": f"Bearer {st.session_state.token}"}
+    url = f"{API_BASE_URL}/api/v1/projects/{project_id}/datasets"
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            if not data:
+                st.warning("No datasets found for this project.")
+                return []
+
+            # Normalize and store in session
+            datasets = [
+                {
+                    "project_id": item.get("id"),
+                    "project_name": item.get("name"),
+                    "dataset_id": item.get("dataset_id"),
+                    "dataset_name": item.get("dataset_name"),
+                }
+                for item in data
+            ]
+
+            # Save in session state
+            st.session_state.datasets_data = {
+                d["dataset_name"]: d["dataset_id"] for d in datasets
+            }
+
+            return datasets
+
+        else:
+            st.error(f"Failed to fetch datasets: {response.status_code} - {response.text}")
+            return []
+
+    except Exception as e:
+        st.error(f"Error fetching datasets for project {project_id}: {e}")
+        return []
+    
+
+def get_dataset_records(project_id: str):
+    """
+    Fetch and aggregate all dataset records under a given project.
+    Uses get_pipeline_data() to pull data for each dataset's run_id.
+    Returns a combined DataFrame with dataset & project info.
+    """
+    if not st.session_state.token:
+        st.error("Please login first")
+        return pd.DataFrame()
+
+    try:
+        # --- Ensure project list exists ---
+        if "projects" not in st.session_state or not st.session_state.projects:
+            st.info("Fetching available projects...")
+            get_projects()
+
+        # --- Get datasets under the project ---
+        st.info(f"Fetching datasets for project {project_id}...")
+        datasets = get_datasets_by_project(project_id)
+        if not datasets:
+            st.warning("No datasets found for this project.")
+            return pd.DataFrame()
+
+        all_records = []
+
+        # --- Loop through each dataset ---
+        total_datasets = len(datasets)
+        progress_bar = st.progress(0)
+        for i, dataset in enumerate(datasets, start=1):
+            dataset_name = dataset.get("dataset_name")
+            run_id = dataset.get("run_id")
+
+            if not run_id:
+                st.warning(f"Dataset '{dataset_name}' has no run_id, skipping...")
+                continue
+
+            st.write(f"📦 Fetching records for dataset **{dataset_name}** ({i}/{total_datasets})")
+            records = get_pipeline_data(run_id)
+
+            if records:
+                df = pd.DataFrame(records)
+                df["dataset_name"] = dataset_name
+                df["dataset_id"] = dataset.get("dataset_id")
+                df["project_id"] = project_id
+                df["project_name"] = dataset.get("project_name", "Unknown Project")
+                all_records.append(df)
+
+            progress_bar.progress(i / total_datasets)
+
+        progress_bar.empty()
+
+        if not all_records:
+            st.warning("No dataset records found for this project.")
+            return pd.DataFrame()
+
+        # --- Combine all datasets ---
+        combined_df = pd.concat(all_records, ignore_index=True)
+
+        # --- Cache in session ---
+        st.session_state.dataset_records = combined_df
+        st.success(f"✅ Aggregated {len(combined_df)} total records across {len(datasets)} datasets.")
+        return combined_df
+
+    except Exception as e:
+        st.error(f"Error fetching dataset records: {e}")
+        return pd.DataFrame()
+
+
