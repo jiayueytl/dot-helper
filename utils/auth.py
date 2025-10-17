@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from config import API_BASE_URL
 
+# @st.cache_resource
 def login(username: str, password: str) -> bool:
     """Authenticate with the API and store token."""
     try:

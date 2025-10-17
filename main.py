@@ -7,9 +7,10 @@ from pages.recycle_questions import recycle_page
 from utils.auth import login
 from utils.state import init_session_state
 
-init_session_state()
+
 
 def main():
+    init_session_state()
     st.set_page_config(page_title="Data Pipeline Management", page_icon="📊", layout="wide")
 
     if not st.session_state.get("authenticated"):
