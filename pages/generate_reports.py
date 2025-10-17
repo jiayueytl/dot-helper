@@ -1,21 +1,36 @@
 import streamlit as st
-from utils.reports import generate_report
-from datetime import datetime
 import pandas as pd
+from datetime import datetime
+from utils.reports import generate_report
+from utils.pipeline_data import query_pipeline_data
+from utils.state import init_session_state
+
+init_session_state()
 
 def reports_page():
-    st.header("Generate Reports")
-    if not st.session_state.pipeline_data:
-        st.info("No pipeline data available. Query data first.")
+    st.header("📊 Generate Project Reports")
+
+    # --- Shared data fetch ---
+    df, run_options, selected_run_id = query_pipeline_data()
+
+    if df is None or df.empty:
+        st.info("No pipeline data found.")
         return
 
-    run_id = st.selectbox("Select Run ID", list(st.session_state.pipeline_data.keys()))
-    data = st.session_state.pipeline_data[run_id]
-    report = generate_report(data)
+    # --- Generate Report ---
+    report = generate_report(df)
     if report.empty:
-        st.warning("No data available for report.")
+        st.warning("No report data available.")
         return
 
+    # --- Display + Download ---
+    st.subheader("🧾 Report Summary")
     st.dataframe(report)
-    csv = report.to_csv(index=False)
-    st.download_button("Download Report", data=csv, file_name=f"report_{run_id}_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv")
+
+    csv = report.to_csv(index=False, encoding="utf-8-sig")
+    st.download_button(
+        "⬇️ Download Report",
+        data=csv,
+        file_name=f"report_{selected_run_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        mime="text/csv"
+    )

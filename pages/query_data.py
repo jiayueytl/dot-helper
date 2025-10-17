@@ -3,6 +3,9 @@ import pandas as pd
 from datetime import datetime
 from utils.api import get_pipeline_runs, get_pipeline_data
 from utils.visualizations import create_visualizations
+from utils.state import init_session_state
+
+init_session_state()
 
 def query_data_page():
     st.header("🔍 Query Pipeline Data")

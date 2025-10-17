@@ -3,6 +3,10 @@ import pandas as pd
 from datetime import datetime
 from utils.data_processing import filter_undone_questions, assign_questions_by_capacity, csv_to_json_zip
 from utils.api import upload_zip_file
+from utils.state import init_session_state
+
+init_session_state()
+
 
 def recycle_page():
     st.header("Recycle Undone Questions")
