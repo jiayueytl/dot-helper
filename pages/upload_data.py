@@ -5,7 +5,7 @@ from utils.api import get_users, upload_zip_file
 from utils.data_processing import csv_to_json_zip
 from utils.state import init_session_state
 
-init_session_state()
+# init_session_state()
 
 def upload_data_page():
     st.header("Upload Data")

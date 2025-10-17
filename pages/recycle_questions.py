@@ -5,7 +5,7 @@ from utils.data_processing import filter_undone_questions, assign_questions_by_c
 from utils.api import upload_zip_file
 from utils.state import init_session_state
 
-init_session_state()
+# init_session_state()
 
 
 def recycle_page():

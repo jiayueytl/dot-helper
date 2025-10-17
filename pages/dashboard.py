@@ -4,7 +4,7 @@ from utils.api import get_users
 from utils.reports import generate_report
 from utils.state import init_session_state
 
-init_session_state()
+# init_session_state()
 
 def dashboard_page():
     st.header("Dashboard")
