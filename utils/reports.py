@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+from config import COMPLETED_STATUS, INCOMPLETE_STATUS, QA_DONE_STATUS
 
 def generate_report(data):
     """Return simple completion report from pipeline data."""

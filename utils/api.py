@@ -17,6 +17,12 @@ def get_users():
     st.error(f"Failed to get users: {response.text}")
     return {}
 
+def map_username_from_assignee(df):
+    if 'assignee' in df.columns:
+        username_to_id = {v: k for k, v in st.session_state.user_data.items()}
+        df['assignee_name'] = df['assignee'].map(lambda x: username_to_id.get(x, "Unknown"))
+    return df
+
 def upload_zip_file(zip_file, run_id, name):
     if not st.session_state.token:
         st.error("Please login first")

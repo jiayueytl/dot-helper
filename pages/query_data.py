@@ -4,6 +4,7 @@ from datetime import datetime
 from utils.api import get_pipeline_runs, get_pipeline_data
 from utils.visualizations import create_visualizations
 from utils.state import init_session_state
+from config import BASE_COLUMNS, USABLE_COLUMNS
 
 # init_session_state()
 
@@ -47,7 +48,6 @@ def query_data_page():
         if st.session_state.current_run_id != selected_run_id or st.session_state.queried_data is None:
             with st.spinner(f"Fetching data for run ID: {selected_run_id}..."):
                 data = get_pipeline_data(selected_run_id)
-                # data = pd.DataFrame(data)
 
             if not data:
                 st.warning("No data found for this pipeline run.")
@@ -55,7 +55,7 @@ def query_data_page():
                 st.session_state.current_run_id = None
                 return
 
-            st.session_state.queried_data = data
+            st.session_state.queried_data = pd.DataFrame(data).drop_duplicates(subset="id",keep="last")
             st.session_state.current_run_id = selected_run_id
             st.session_state.processed_df = None
 
@@ -79,13 +79,18 @@ def query_data_page():
             for i in range(n_rows):
                 cols_row = all_columns[i * cols_per_row : (i + 1) * cols_per_row]
                 col_objs = st.columns(len(cols_row))
+
                 for c_obj, c_name in zip(col_objs, cols_row):
                     with c_obj:
+                        # ✅ Default checked if column is in BASE or USABLE columns
+                        default_checked = c_name in BASE_COLUMNS or c_name in USABLE_COLUMNS
+                        
                         checked = st.checkbox(
                             c_name,
-                            value=True,
+                            value=default_checked,
                             key=f"colcheck_{selected_run_id}_{c_name}"
                         )
+
                         if checked:
                             selected_columns.append(c_name)
 

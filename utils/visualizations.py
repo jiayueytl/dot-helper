@@ -2,6 +2,8 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+from utils.api import get_users
+from config import COMPLETED_STATUS, INCOMPLETE_STATUS, QA_DONE_STATUS
 
 def status_distribution(df):
     counts = df['status'].value_counts().reset_index()
@@ -36,20 +38,22 @@ def create_visualizations(df: pd.DataFrame):
     
     # 2. Completion rate by assignee_name
     st.subheader("2. Completion Rate by Assignee")
-    if 'assignee_name' in df.columns:
+    if 'assignee' in df.columns or 'assignee_name' in df.columns:
         # Get user data if not already fetched
         if not st.session_state.user_data:
             with st.spinner("Fetching user data..."):
                 get_users()
         
-        # # Create a reverse mapping from user ID to username
-        # id_to_username = {v: k for k, v in st.session_state.user_data.items()}
+        # Create a reverse mapping from user ID to username
+        username_to_id = {v: k for k, v in st.session_state.user_data.items()}
         
         # Map assignee IDs to usernames
-        # df['assignee_name'] = df['assignee'].map(lambda x: id_to_username.get(x, "Unknown"))
+        df['assignee_name'] = df['assignee'].map(lambda x: username_to_id.get(x, "Unknown"))
+
+        # st.write(username_to_id)
         
         # Filter for completed status
-        completed_df = df[df['status'] == 'annotation_complete']
+        completed_df = df[df['status'].isin(COMPLETED_STATUS)]
         
         # Count completed by assignee
         assignee_completion = completed_df['assignee_name'].value_counts().reset_index()
@@ -114,7 +118,7 @@ def create_visualizations(df: pd.DataFrame):
     st.subheader("4. QA Rates by Reviewer")
     if 'reviewer' in df.columns:
         # Filter for QA approved status
-        qa_approved_df = df[df['status'] == 'qa_approved']
+        qa_approved_df = df[df['status'].isin(QA_DONE_STATUS)]
         
         # Count QA approved by reviewer
         reviewer_qa = qa_approved_df['reviewer'].value_counts().reset_index()
