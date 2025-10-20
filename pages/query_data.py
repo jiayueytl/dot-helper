@@ -55,7 +55,7 @@ def query_data_page():
                 st.session_state.current_run_id = None
                 return
 
-            st.session_state.queried_data = pd.DataFrame(data).drop_duplicates(subset="id",keep="last")
+            st.session_state.queried_data = pd.DataFrame(data).drop_duplicates(subset="id",keep="first")
             st.session_state.current_run_id = selected_run_id
             st.session_state.processed_df = None
 
@@ -192,3 +192,6 @@ def query_data_page():
                 create_visualizations(vis_df)
             except Exception as e:
                 st.error(f"Error creating visualizations: {e}")
+
+
+# TODO: standardize visualization utils

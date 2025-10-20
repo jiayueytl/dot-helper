@@ -100,6 +100,9 @@ def reports_page():
 
     report_df = pd.DataFrame(report_rows)
     st.subheader("📁 Per Dataset Report")
+    # TODO: Get the summarized stats here [Total completed VS Total Assigned]
+    # TODO: Establish a dataset repo as the original bank
+
     st.dataframe(report_df)
 
     summary_df = (
