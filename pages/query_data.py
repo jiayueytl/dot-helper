@@ -47,6 +47,7 @@ def query_data_page():
         if st.session_state.current_run_id != selected_run_id or st.session_state.queried_data is None:
             with st.spinner(f"Fetching data for run ID: {selected_run_id}..."):
                 data = get_pipeline_data(selected_run_id)
+                # data = pd.DataFrame(data)
 
             if not data:
                 st.warning("No data found for this pipeline run.")
@@ -54,7 +55,7 @@ def query_data_page():
                 st.session_state.current_run_id = None
                 return
 
-            st.session_state.queried_data = pd.DataFrame(data)
+            st.session_state.queried_data = data
             st.session_state.current_run_id = selected_run_id
             st.session_state.processed_df = None
 

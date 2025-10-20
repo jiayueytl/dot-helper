@@ -75,7 +75,7 @@ def reports_page():
         completed = len(group[group["status"].str.lower().isin(COMPLETED_STATUS)])
         comp_rate = round((completed / total) * 100, 2) if total else 0
         qa_completed = len(group[group["status"].str.lower().isin(QA_DONE_STATUS)])
-        qa_comp_rate = round((qa_completed / completed) * 100, 2) if total else 0
+        qa_comp_rate = round((qa_completed / completed) * 100, 2) if completed and completed > 0 else 0
         qa_p = len(group[group["qa_status"].str.lower() == "pass"])
         qa_f = len(group[group["qa_status"].str.lower() == "fail"])
         # dataset_names = ", ".join(group["dataset_name"].unique())
