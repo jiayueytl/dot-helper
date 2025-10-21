@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from utils.api import get_users
-from config import COMPLETED_STATUS, INCOMPLETE_STATUS, QA_DONE_STATUS
+from config import COMPLETED_STATUS, INCOMPLETE_STATUS, QA_DONE_STATUS,USABLE_COLUMNS
 
 def status_distribution(df):
     counts = df['status'].value_counts().reset_index()
@@ -143,3 +143,46 @@ def create_visualizations(df: pd.DataFrame):
         st.dataframe(reviewer_qa[['Reviewer Name', 'QA Approved Count']])
     else:
         st.warning("No reviewer column found in data")
+
+    
+    # --- Basic Annotation Data Distribution ---
+    st.subheader("5. Basic Annotation Data Distribution")
+    st.info("Charts below show distribution (count by 'uuid') for all configured USABLE_COLUMNS within COMPLETED Data")
+    # st.metric("Completed Count", f"{answer_rewrite_rate}%", f"{answer_rewrites}/{total_records} records")
+    # Only proceed if there are usable columns present in the dataframe
+    usable_cols = [col for col in USABLE_COLUMNS if col in completed_df.columns]
+
+    if len(usable_cols) == 0:
+        st.warning("No USABLE_COLUMNS found in the current dataframe.")
+    else:
+        cols_per_row = 2
+        n_rows = (len(usable_cols) + cols_per_row - 1) // cols_per_row
+
+        for i in range(n_rows):
+            chart_cols = usable_cols[i * cols_per_row : (i + 1) * cols_per_row]
+            st_cols = st.columns(len(chart_cols))
+
+            for st_col, col_name in zip(st_cols, chart_cols):
+                with st_col:
+                    st.markdown(f"**📊 {col_name} Distribution**")
+
+                    try:
+                        # Group by column and count unique uuids
+                        chart_df = (
+                            completed_df.groupby(col_name)["uuid"]
+                            .nunique()
+                            .reset_index()
+                            .rename(columns={"uuid": "count"})
+                            .sort_values("count", ascending=False)
+                        )
+
+                        # Use built-in Streamlit bar chart
+                        st.bar_chart(chart_df, x=col_name, y="count", use_container_width=True)
+
+                        # Add data labels (Streamlit native chart doesn’t directly support labels)
+                        # So show as small table below chart
+                        st.dataframe(chart_df, use_container_width=True, hide_index=True)
+
+                    except Exception as e:
+                        st.error(f"Could not plot for column '{col_name}': {e}")
+

@@ -62,7 +62,7 @@ def reports_page():
         return
 
     # Ensure required columns exist
-    for col in ["assignee_name", "status", "qa_status", "dataset_name"]:
+    for col in ["assignee_name", "status", "qa_flag", "dataset_name"]:
         if col not in records_df.columns:
             records_df[col] = ""
 
@@ -76,8 +76,8 @@ def reports_page():
         comp_rate = round((completed / total) * 100, 2) if total else 0
         qa_completed = len(group[group["status"].str.lower().isin(QA_DONE_STATUS)])
         qa_comp_rate = round((qa_completed / completed) * 100, 2) if completed and completed > 0 else 0
-        qa_p = len(group[group["qa_status"].str.lower() == "pass"])
-        qa_f = len(group[group["qa_status"].str.lower() == "fail"])
+        qa_p = len(group[group["qa_flag"].str.lower() == "pass"])
+        qa_f = len(group[group["qa_flag"].str.lower() == "fail"])
         # dataset_names = ", ".join(group["dataset_name"].unique())
 
         report_rows.append({
@@ -88,8 +88,8 @@ def reports_page():
             "completion_rate": comp_rate,
             "total_qa": qa_completed,
             "qa_comp_rate": qa_comp_rate,
-            "qa_status_pass": qa_p,
-            "qa_status_fail": qa_f
+            "qa_flag_pass": qa_p,
+            "qa_flag_fail": qa_f
         })
 
 
@@ -111,16 +111,16 @@ def reports_page():
             "total_assigned": "sum",
             "total_completed": "sum",
             "total_qa": "sum",
-            "qa_status_pass": "sum",
-            "qa_status_fail": "sum",
+            "qa_flag_pass": "sum",
+            "qa_flag_fail": "sum",
         })
         .reset_index()
     )
     summary_df["completion_rate"] = round((summary_df["total_completed"] / summary_df["total_assigned"]) * 100, 2)
     summary_df["qa_comp_rate"] = round((summary_df["total_qa"] / summary_df["total_assigned"]) * 100, 2)
 
-    st.subheader("👤 Per Assignee Summary")
-    st.dataframe(summary_df)
+    # st.subheader("👤 Per Assignee Summary")
+    # st.dataframe(summary_df)
 
 
     # stats_df = 

@@ -18,10 +18,10 @@ def get_users():
     return {}
 
 def map_username_from_assignee(df):
-    if 'assignee' in df.columns:
-        username_to_id = {v: k for k, v in st.session_state.user_data.items()}
-        df['assignee_name'] = df['assignee'].map(lambda x: username_to_id.get(x, "Unknown"))
-    return df
+    if 'assignee' not in df.columns:
+        return pd.Series(["Unknown"] * len(df))
+    username_to_id = {v: k for k, v in st.session_state.user_data.items()}
+    return df['assignee'].map(lambda x: username_to_id.get(x, "Unknown"))
 
 def upload_zip_file(zip_file, run_id, name):
     if not st.session_state.token:
@@ -247,11 +247,12 @@ def get_dataset_records(dataset_ids):
 
             
             records = get_pipeline_data(dataset_id)
-
+            st.write(records)
             if records:
                 df = pd.DataFrame(records)
                 df["dataset_id"] = dataset_id
                 df["dataset_name"] = dataset_name
+                df["assignee_name"] = map_username_from_assignee(df)
                 all_records.append(df)
 
             progress_bar.progress(i / total_datasets)
