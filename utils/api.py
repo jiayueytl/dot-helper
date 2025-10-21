@@ -17,6 +17,12 @@ def get_users():
     st.error(f"Failed to get users: {response.text}")
     return {}
 
+def map_username_from_assignee(df):
+    if 'assignee' in df.columns:
+        username_to_id = {v: k for k, v in st.session_state.user_data.items()}
+        df['assignee_name'] = df['assignee'].map(lambda x: username_to_id.get(x, "Unknown"))
+    return df
+
 def upload_zip_file(zip_file, run_id, name):
     if not st.session_state.token:
         st.error("Please login first")
@@ -197,7 +203,6 @@ def get_datasets_by_project(project_id: str):
     except Exception as e:
         st.error(f"Error fetching datasets for project {project_id}: {e}")
         return []
-    
 
 def get_dataset_records(dataset_ids):
     """
@@ -222,13 +227,15 @@ def get_dataset_records(dataset_ids):
     try:
         for i, dataset_id in enumerate(dataset_ids, start=1):
             
-            meta_url = f"{API_BASE_URL}/api/v1/datasets/{dataset_id}"
+            # Get the pipeline information
+            meta_url = f"{API_BASE_URL}/api/v1/data_v2/pipeline/{dataset_id}"
             meta_resp = requests.get(meta_url, headers=headers)
             if meta_resp.status_code != 200:
                 st.warning(f"⚠️ Failed to fetch dataset metadata for {dataset_id}")
                 continue
 
             meta = meta_resp.json()
+            # st.write(meta)
             dataset_name = meta.get("run_name") or meta.get("name") or f"Dataset-{dataset_id}"
             run_id = meta.get("run_id")
 
@@ -239,7 +246,7 @@ def get_dataset_records(dataset_ids):
             st.write(f"📦 Fetching records for **{dataset_name}** ({i}/{total_datasets})")
 
             
-            records = get_pipeline_data(run_id)
+            records = get_pipeline_data(dataset_id)
 
             if records:
                 df = pd.DataFrame(records)
@@ -256,9 +263,13 @@ def get_dataset_records(dataset_ids):
             return pd.DataFrame()
 
         combined_df = pd.concat(all_records, ignore_index=True)
+        combined_df = combined_df.drop_duplicates(subset="id",keep="last")
         st.success(f"✅ Aggregated {len(combined_df)} total records across {len(dataset_ids)} datasets.")
         return combined_df
 
     except Exception as e:
         st.error(f"Error fetching dataset records: {e}")
         return pd.DataFrame()
+
+
+# def get_dataset_records(dataset_ids):
