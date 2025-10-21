@@ -17,7 +17,7 @@ def status_distribution(df):
 def create_visualizations(df: pd.DataFrame):
     """Create data visualizations based on the pipeline data."""
     # Define completed status
-    completed_status = ["annotation_complete", "ready_for_qa", "qa_approved"]
+    # completed_status = ["annotation_complete", "ready_for_qa", "qa_approved"]
     
     # 1. Group by status
     st.subheader("1. Status Distribution")

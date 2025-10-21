@@ -62,6 +62,31 @@ def query_data_page():
         # Use cached data
         df = st.session_state.queried_data.copy()
 
+        # # --- Simple Query Box ---
+        # st.markdown("### 🔎 Quick Data Query")
+
+        # query_input = st.text_input(
+        #     "Enter a query expression (Pandas syntax)",
+        #     placeholder='e.g. rating == "good" and user_id == 123',
+        #     key=f"querybox_{selected_run_id}"
+        # )
+
+        # filtered_df = df
+        # if query_input.strip():
+        #     try:
+        #         filtered_df = df.query(query_input)
+        #         st.success(f"✅ {len(filtered_df)} rows matched your query.")
+        #     except Exception as e:
+        #         st.error(f"Invalid query: {e}")
+        #         filtered_df = df
+
+        
+
+        # st.dataframe(filtered_df)
+        # st.write(filtered_df.groupby(['assignee_name','package_id','status']).count()['uuid'])
+        # # Continue using filtered_df downstream instead of df
+        # df = filtered_df
+
         # Tabs
         tab1, tab2 = st.tabs(["🧮 Data View", "📊 Visualizations"])
 
@@ -121,6 +146,63 @@ def query_data_page():
                 # --- Show Data ---
                 st.markdown("### 📋 Final Data Table")
                 st.dataframe(df_display)
+
+                # --- Step 3: In-place Query & Aggregation ---
+                st.markdown("### 🔎 Interactive Data Query & Aggregation")
+
+                st.caption(
+                    "You can filter, group, and aggregate the queried data directly using pandas syntax. "
+                    "Examples:\n"
+                    "- `status == 'not_started'`\n"
+                    "- `chn_flag == 0 and status == 'not_started'`\n"
+                    "- `df.groupby('assignee_name')['id'].count()`\n"
+                    "- `df.groupby('dataset_name')['package_id'].nunique()`"
+                )
+
+                query_type = st.radio(
+                    "Select query mode:",
+                    ["Filter (pandas .query syntax)", "Aggregation (Python expression)"],
+                    horizontal=True,
+                )
+
+                query_code = st.text_area(
+                    "Enter your query or aggregation expression:",
+                    value="status == 'not_started'",
+                    key=f"querybox_{selected_run_id}",
+                    height=100,
+                )
+
+                execute_query = st.button("▶️ Run Query / Aggregation")
+
+                if execute_query:
+                    try:
+                        if query_type.startswith("Filter"):
+                            # ✅ Use pandas .query()
+                            filtered_df = df_display.query(query_code)
+                            st.success(f"✅ Filter applied — {len(filtered_df)} rows returned.")
+                            st.dataframe(filtered_df)
+
+                            # Optional: display basic stats
+                            st.markdown("**Quick Stats**")
+                            st.write(filtered_df.describe(include='all').transpose())
+
+                        else:
+                            # ✅ Safe sandboxed eval for aggregations
+                            local_env = {"df": df_display, "pd": pd}
+                            result = eval(query_code, {"__builtins__": {}}, local_env)
+
+                            if isinstance(result, pd.DataFrame):
+                                st.dataframe(result)
+                            elif isinstance(result, pd.Series):
+                                st.dataframe(result.to_frame())
+                            else:
+                                st.write(result)
+
+                            st.success("✅ Aggregation executed successfully.")
+
+                    except Exception as e:
+                        st.error(f"⚠️ Error executing query: {e}")
+
 
                 st.session_state.processed_df = df_display
             else:
