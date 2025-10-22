@@ -247,7 +247,7 @@ def get_dataset_records(dataset_ids):
 
             
             records = get_pipeline_data(dataset_id)
-            st.write(records)
+            # st.write(records)
             if records:
                 df = pd.DataFrame(records)
                 df["dataset_id"] = dataset_id

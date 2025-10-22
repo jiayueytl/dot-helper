@@ -30,3 +30,18 @@ def assign_questions_by_capacity(questions, capacity_df):
         user_load[chosen] += 1
         assigned.append(q)
     return assigned
+
+def get_performance_tier(pass_rate):
+    """Assigns a performance tier based on the QA pass rate."""
+    if pass_rate >= 90:
+        return 1
+    elif pass_rate >= 80 and pass_rate<90:
+        return 2
+    elif pass_rate >= 70  and pass_rate<80:
+        return 3
+    elif pass_rate >= 50  and pass_rate<70:
+        return 4
+    elif pass_rate <50:
+        return 5
+    else:
+        return 0
