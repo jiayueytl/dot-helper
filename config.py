@@ -1,7 +1,7 @@
 API_BASE_URL = "https://dot.ytlailabs.tech"
 PREFIX = "LF"
 SFT_ROUND = "SFT-LF"
-ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqeSIsImV4cCI6MTc2MTExMzkxOX0.ZuXiLbazd2s6pBLESPhuD_i0NHA-llM5IDQr5U3-0FA"
+ACCESS_TOKEN = ""
 COMPLETED_STATUS = ['annotation_complete','ready_for_qa','qa_approve']
 INCOMPLETE_STATUS = ['not_started','in_progress','rework']
 QA_DONE_STATUS = ['qa_approve']

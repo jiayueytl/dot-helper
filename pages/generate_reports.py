@@ -49,6 +49,13 @@ def fetch_project_data(selected_project_id):
     
     # Fetch all dataset records
     records_df = load_dataset_records(dataset_ids)
+
+    if records_df.empty:
+        st.warning("No records found for selected project.")
+        return False
+
+    # Store raw records for download
+    st.session_state.raw_records_df = records_df
     
     if records_df.empty:
         st.warning("No records found for selected project.")
@@ -60,6 +67,7 @@ def fetch_project_data(selected_project_id):
             records_df[col] = ""
     
     # Process data and create report
+    
     st.session_state.report_df = process_records_to_report(records_df)
     st.session_state.summary_df = create_summary_report(st.session_state.report_df)
     st.session_state.data_fetched = True
@@ -193,6 +201,29 @@ def reports_page():
     if st.button("🚀 Fetch Project Data"):
         with st.spinner("Fetching project data..."):
             fetch_project_data(selected_project_id)
+
+        if "raw_records_df" in st.session_state and not st.session_state.raw_records_df.empty:
+            raw_csv = st.session_state.raw_records_df.to_csv(index=False, encoding="utf-8-sig")
+            raw_json = st.session_state.raw_records_df.to_json(orient="records",indent=2,force_ascii=False)
+            with st.expander("👀 Preview Raw Data"):
+                st.dataframe(st.session_state.raw_records_df.head(30))
+            st.download_button(
+                label="⬇️ Download Raw Concatenated Data",
+                data=raw_csv,
+                file_name=f"raw_dataset_records_{selected_project_id}.csv",
+                mime="text/csv",
+                help="Download all raw records from selected project's datasets"
+            )
+            st.download_button(
+                label="⬇️ Download Raw Concatenated Data (json)",
+                data=raw_json,
+                file_name=f"raw_dataset_records_{selected_project_id}.json",
+                mime="application/json",
+                help="Download all raw records from selected project's datasets"
+            )
+        else:
+            st.info("No raw dataset records available yet. Fetch project data first.")
+
     
     # Display data if fetched
     if st.session_state.projects and st.session_state.report_data is not None:

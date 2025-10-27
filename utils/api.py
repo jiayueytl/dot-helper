@@ -264,7 +264,7 @@ def get_dataset_records(dataset_ids):
             return pd.DataFrame()
 
         combined_df = pd.concat(all_records, ignore_index=True)
-        combined_df = combined_df.drop_duplicates(subset="id",keep="last")
+        # combined_df = combined_df.drop_duplicates(subset="id",keep="last")
         st.success(f"✅ Aggregated {len(combined_df)} total records across {len(dataset_ids)} datasets.")
         return combined_df
 
