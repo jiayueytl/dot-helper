@@ -24,6 +24,8 @@ def init_session_state():
 
         # Reports and generated data
         "report_data": {},
+        "report_df": {},
+        "summary_df":{},
 
         # Upload data page persistence
         "updated_df": None,

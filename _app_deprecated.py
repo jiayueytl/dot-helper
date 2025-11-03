@@ -455,7 +455,9 @@ def main():
     st.sidebar.title("Navigation")
     page = st.sidebar.selectbox(
         "Select a page",
-        ["Dashboard", "Upload Data", "Query Data", "Generate Reports", "Recycle Questions"]
+        ["Dashboard", "Upload Data", 
+        #  "Query Data", 
+         "Generate Reports", "Recycle Questions"]
     )
     
     # Logout button

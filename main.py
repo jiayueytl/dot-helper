@@ -29,7 +29,10 @@ def main():
 
     # ✅ Continue to the rest of your app
     st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox("Select Page", ["Dashboard", "Upload Data", "Query Data", "Generate Reports", "Recycle Questions"])
+    page = st.sidebar.selectbox("Select Page", 
+                                ["Dashboard", "Upload Data", 
+                                #  "Query Data", 
+                                 "Generate Reports", "Recycle Questions"])
     if st.sidebar.button("Logout"):
         st.session_state.clear()
         st.rerun()

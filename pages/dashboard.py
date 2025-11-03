@@ -10,7 +10,7 @@ def dashboard_page():
     st.header("Dashboard")
     if not st.session_state.user_data:
         get_users()
-        st.write(st.session_state.user_data)
+        # st.write(st.session_state.user_data)
         st.write(st.session_state.token)
     st.success(f"{len(st.session_state.user_data)} users loaded.")
     for run_id, data in st.session_state.pipeline_data.items():

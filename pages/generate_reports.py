@@ -223,37 +223,85 @@ def reports_page():
             )
         else:
             st.info("No raw dataset records available yet. Fetch project data first.")
-
-    
-    # Display data if fetched
-    if st.session_state.projects and st.session_state.report_data is not None:
+        
         report_df = st.session_state.report_df
         summary_df = st.session_state.summary_df
+
+        # st.subheader("📁 Per Dataset Report")
+        # st.dataframe(report_df)
+        # st.subheader("📋 Filtered Report")
         
-        # Show per dataset report
-        st.subheader("📁 Per Dataset Report")
-        st.dataframe(report_df)
-        
-        st.subheader("📋 Filtered Report")
-        # Apply filters
-        filtered_df = apply_filters(report_df)
-        st.dataframe(filtered_df)
+        # # Apply filters
+        # filtered_df = apply_filters(report_df)
+        # st.dataframe(filtered_df)
         
         # # Show summary report
         st.subheader("📊 Summary Report")
         st.metric('Total Completed',summary_df['total_completed'].sum())
         st.metric('Total Done QA',summary_df['total_qa'].sum())
+        
         # st.metric('Total Done QA',summary_df['total_qa'].sum())
         # st.dataframe(summary_df)
-        
         # Download button
+        
         csv = report_df.to_csv(index=False, encoding="utf-8-sig")
+        json = report_df.to_json(orient="records",indent=2,force_ascii=False)
         st.download_button(
             label="⬇️ Download Report CSV",
             data=csv,
             file_name=f"project_report_{selected_project_id}.csv",
-            mime="text/csv"
+            mime="text/csv")
+        st.download_button(
+            label="⬇️ Download Report JSON",
+            data=json,
+            file_name=f"project_report_{selected_project_id}.json",
+            mime="application/json"
         )
-        
         # Create visualization
         create_visualization(report_df)
+
+    
+    # Display data if fetched
+    # if st.session_state.projects and st.session_state.report_data is not None:
+    #     report_df = st.session_state.report_df
+    #     summary_df = st.session_state.summary_df
+        
+    #     if report_df is not None and not report_df.empty and summary_df is not None and not summary_df.empty:
+
+    #         # Show per dataset report
+    #         st.subheader("📁 Per Dataset Report")
+    #         st.dataframe(report_df)
+            
+    #         st.subheader("📋 Filtered Report")
+    #         # Apply filters
+    #         filtered_df = apply_filters(report_df)
+    #         st.dataframe(filtered_df)
+            
+    #         # # Show summary report
+    #         st.subheader("📊 Summary Report")
+    #         st.metric('Total Completed',summary_df['total_completed'].sum())
+    #         st.metric('Total Done QA',summary_df['total_qa'].sum())
+    #         # st.metric('Total Done QA',summary_df['total_qa'].sum())
+    #         # st.dataframe(summary_df)
+            
+    #         # Download button
+    #         csv = report_df.to_csv(index=False, encoding="utf-8-sig")
+
+    #         json = report_df.to_json(orient="records",indent=2,force_ascii=False)
+
+    #         st.download_button(
+    #             label="⬇️ Download Report CSV",
+    #             data=csv,
+    #             file_name=f"project_report_{selected_project_id}.csv",
+    #             mime="text/csv"
+    #         )
+
+    #         st.download_button(
+    #             label="⬇️ Download Report JSON",
+    #             data=json,
+    #             file_name=f"project_report_{selected_project_id}.json",
+    #             mime="application/json"
+    #         )
+            
+    #         # Create visualization
+    #         create_visualization(report_df)
