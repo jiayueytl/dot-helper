@@ -1,7 +1,11 @@
 streamlit
 pandas
-numpy
+numpy<2.0
 requests
 matplotlib
 seaborn
 python-dotenv
+# streamlit-pandas-profiling
+# ydata-profiling<4.8
+setuptools<81
+streamlit-aggrid

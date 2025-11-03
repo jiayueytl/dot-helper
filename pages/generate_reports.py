@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from config import COMPLETED_STATUS, QA_DONE_STATUS, INCOMPLETE_STATUS, BASE_COLUMNS, USABLE_COLUMNS
 from utils.api import get_projects, get_datasets_by_project, get_dataset_records
 from utils.data_processing import get_performance_tier
+# from streamlit_pandas_profiling import st_profile_report
+# from ydata_profiling import ProfileReport
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Cache expensive operations
 @st.cache_data
@@ -159,16 +162,34 @@ def apply_filters(report_df):
 def create_visualization(report_df):
     """Create and display visualization"""
     st.subheader("📈 Visualizations")
-    try:
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.barplot(data=report_df, x="assignee_name", y="comp_rate", ax=ax)
-        plt.xticks(rotation=45, ha="right")
-        plt.title("Completion Rate by Assignee")
-        plt.ylabel("Completion %")
-        plt.xlabel("Assignee")
-        st.pyplot(fig)
-    except Exception as e:
-        st.warning(f"Visualization error: {e}")
+    # try:
+    #     fig, ax = plt.subplots(figsize=(8, 5))
+    #     sns.barplot(data=report_df, x="assignee_name", y="comp_rate", ax=ax)
+    #     plt.xticks(rotation=45, ha="right")
+    #     plt.title("Completion Rate by Assignee")
+    #     plt.ylabel("Completion %")
+    #     plt.xlabel("Assignee")
+    #     st.pyplot(fig)
+    # except Exception as e:
+    #     st.warning(f"Visualization error: {e}")
+    # data_profile = ProfileReport(report_df)
+    # st_profile_report(data_profile)
+
+    gb = GridOptionsBuilder.from_dataframe(report_df)
+    gb.configure_pagination(paginationAutoPageSize=True)
+    gb.configure_side_bar()  # enables pivot/filter/group sidebar
+    gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum')
+
+    grid_options = gb.build()
+
+    st.subheader("🔧 Drag and drop columns to group/pivot!")
+    grid_response = AgGrid(
+        report_df,
+        gridOptions=grid_options,
+        enable_enterprise_modules=True,  # enables pivot & group
+        update_mode="MODEL_CHANGED",
+        theme="streamlit",
+    )
 
 def reports_page():
     """Main function for the reports page"""
@@ -200,7 +221,8 @@ def reports_page():
     # Fetch data button
     if st.button("🚀 Fetch Project Data"):
         with st.spinner("Fetching project data..."):
-            fetch_project_data(selected_project_id)
+            with st.expander("👀 Fetching Raw Data..."):
+                fetch_project_data(selected_project_id)
 
         if "raw_records_df" in st.session_state and not st.session_state.raw_records_df.empty:
             raw_csv = st.session_state.raw_records_df.to_csv(index=False, encoding="utf-8-sig")
@@ -305,3 +327,6 @@ def reports_page():
             
     #         # Create visualization
     #         create_visualization(report_df)
+
+#TODO: data profiling
+#TODO: data builder
