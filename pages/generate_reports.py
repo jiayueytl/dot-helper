@@ -161,20 +161,8 @@ def apply_filters(report_df):
 
 def create_visualization(report_df):
     """Create and display visualization"""
-    st.subheader("📈 Visualizations")
-    # try:
-    #     fig, ax = plt.subplots(figsize=(8, 5))
-    #     sns.barplot(data=report_df, x="assignee_name", y="comp_rate", ax=ax)
-    #     plt.xticks(rotation=45, ha="right")
-    #     plt.title("Completion Rate by Assignee")
-    #     plt.ylabel("Completion %")
-    #     plt.xlabel("Assignee")
-    #     st.pyplot(fig)
-    # except Exception as e:
-    #     st.warning(f"Visualization error: {e}")
-    # data_profile = ProfileReport(report_df)
-    # st_profile_report(data_profile)
-
+    st.subheader("📈 Tracker")
+    st.dataframe(report_df)
     gb = GridOptionsBuilder.from_dataframe(report_df)
     gb.configure_pagination(paginationAutoPageSize=True)
     gb.configure_side_bar()  # enables pivot/filter/group sidebar
@@ -182,14 +170,15 @@ def create_visualization(report_df):
 
     grid_options = gb.build()
 
-    st.subheader("🔧 Drag and drop columns to group/pivot!")
-    grid_response = AgGrid(
-        report_df,
-        gridOptions=grid_options,
-        enable_enterprise_modules=True,  # enables pivot & group
-        update_mode="MODEL_CHANGED",
-        theme="streamlit",
-    )
+    st.subheader("🔧 Drag and drop columns to group/pivot")
+    with st.expander("Pivot here"):
+        grid_response = AgGrid(
+            report_df,
+            gridOptions=grid_options,
+            enable_enterprise_modules=True,  # enables pivot & group
+            update_mode="MODEL_CHANGED",
+            theme="streamlit",
+        )
 
 def reports_page():
     """Main function for the reports page"""
