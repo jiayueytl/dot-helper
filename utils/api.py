@@ -274,3 +274,19 @@ def get_dataset_records(dataset_ids):
 
 
 # def get_dataset_records(dataset_ids):
+
+def get_dataset_schema(dataset_id):
+    """Fetch dataset schema from API."""
+    if not st.session_state.token:
+        st.error("Please login first")
+        return {}
+
+    headers = {"Authorization": f"Bearer {st.session_state.token}"}
+    url = f"{API_BASE_URL}/api/v1/data_v2/pipeline/{dataset_id}/schema"
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        schema = response.json()
+        return schema
+    st.error(f"Failed to get dataset schema: {response.text}")
+    return {}
+
