@@ -11,17 +11,17 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
 
 # Cache expensive operations
-@st.cache_data
+# @st.cache_data
 def load_projects():
     """Load and cache projects data"""
     return get_projects()
 
-@st.cache_data
+# @st.cache_data
 def load_datasets(project_id):
     """Load and cache datasets for a specific project"""
     return get_datasets_by_project(project_id)
 
-@st.cache_data
+# @st.cache_data
 def load_dataset_records(dataset_ids):
     """Load and cache dataset records"""
     return get_dataset_records(dataset_ids)
@@ -339,7 +339,7 @@ def reports_page():
 
     # --- Process into report ---
     combined_report = process_records_to_report(combined_records)
-    combined_summary = create_summary_report(combined_report)
+    combined_summary = create_summary_report(sanitize_for_streamlit(combined_report))
     st.session_state.report_df = combined_report
     st.session_state.summary_df = combined_summary
 
@@ -366,12 +366,13 @@ def reports_page():
         )
 
     filtered_df = combined_report.copy()
+    st.write(filtered_df)
     if selected_projects:
         filtered_df = filtered_df[filtered_df["project_name"].isin(selected_projects)]
     if selected_datasets:
         filtered_df = filtered_df[filtered_df["dataset_name"].isin(selected_datasets)]
-    if selected_assignees:
-        filtered_df = filtered_df[filtered_df["assignee_name"].isin(selected_assignees)]
+    # if selected_assignees:
+    #     filtered_df = filtered_df[filtered_df["assignee_name"].isin(selected_assignees)]
 
     # --- Show Summary Metrics ---
     st.subheader("📊 Combined Summary")
@@ -383,6 +384,11 @@ def reports_page():
     json = filtered_df.to_json(orient="records", indent=2, force_ascii=False)
     st.download_button("⬇️ Download Combined CSV", csv, f"multi_project_report.csv", "text/csv")
     st.download_button("⬇️ Download Combined JSON", json, f"multi_project_report.json", "application/json")
+
+    csv2 = combined_records.to_csv(index=False, encoding="utf-8-sig")
+    json2 = combined_records.to_json(orient="records", indent=2, force_ascii=False)
+    st.download_button("⬇️ Download Combined CSV", csv2, f"multi_project_report-combined_records.csv", "text/csv")
+    st.download_button("⬇️ Download Combined JSON", json2, f"multi_project_report-combined_records.json", "application/json")
 
     # --- Visualization ---
     create_visualization(combined_report)
