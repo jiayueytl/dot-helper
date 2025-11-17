@@ -18,6 +18,7 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN", "")
 
 COMPLETED_STATUS = get_list("COMPLETED_STATUS", ['annotation_complete', 'ready_for_qa', 'qa_approve'])
 INCOMPLETE_STATUS = get_list("INCOMPLETE_STATUS", ['not_started', 'in_progress', 'rework'])
+QA_STATUS = get_list("INCOMPLETE_STATUS", ['ready_for_qa', 'qa_approve'])
 QA_DONE_STATUS = get_list("QA_DONE_STATUS", ['qa_approve'])
 
 BASE_COLUMNS = get_list("BASE_COLUMNS", [

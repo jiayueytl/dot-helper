@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 from config import API_BASE_URL
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import pandas as pd
 
 def get_users():
@@ -22,6 +22,29 @@ def map_username_from_assignee(df):
         return pd.Series(["Unknown"] * len(df))
     username_to_id = {v: k for k, v in st.session_state.user_data.items()}
     return df['assignee'].map(lambda x: username_to_id.get(x, "Unknown"))
+
+def get_users_with_roles():
+    if not st.session_state.get('token'):
+        st.error("Please login first (set st.session_state['token']).")
+        return {}
+    headers = {"Authorization": f"Bearer {st.session_state.token}"}
+    response = requests.get(f"{API_BASE_URL}/api/v1/users", headers=headers)
+    if response.status_code == 200:
+        users = response.json()
+        out = {}
+        for u in users:
+            username = u.get('username') or u.get('name') or u.get('email')
+            uid = u.get('id')
+            roles = []
+            for r in u.get('roles') or []:
+                rname = r.get('name')
+                if rname:
+                    roles.append(rname)
+            out[username] = {"id": uid, "roles": roles}
+        st.session_state.user_data_with_roles = out
+        return out
+    st.error(f"Failed to get users: {response.status_code} - {response.text}")
+    return {}
 
 def upload_zip_file(zip_file, run_id, name):
     if not st.session_state.token:
@@ -138,6 +161,30 @@ def bulk_update_pipeline(pipeline_run_id: str, update_data: Dict) -> bool:
     except Exception as e:
         st.error(f"Error during bulk update: {str(e)}")
         return False
+    
+def bulk_update_qa(pipeline_run_id: str, 
+                question_ids: List[str], 
+                qa_user_id: str, 
+                new_status: str = "ready_for_qa") -> Tuple[bool, str]:
+    """Call the bulk-update API to assign question ids to a QA reviewer."""
+    if not st.session_state.token:
+        st.error("Please login first")
+        return False
+
+    if not question_ids:
+        return True, "No questions to update"
+    
+    url = f"{API_BASE_URL}/api/v1/data_v2/pipeline/{pipeline_run_id}/bulk-update"
+    headers = {"Authorization": f"Bearer {st.session_state.token}"}
+    payload = {
+        "questions": question_ids,
+        "new_reviewer": qa_user_id,
+        "new_status": new_status
+    }
+    resp = requests.post(url, json=payload, headers=headers)
+    if resp.status_code in (200, 204):
+        return True, f"Updated {len(question_ids)} items for {qa_user_id}"
+    return False, f"Failed {resp.status_code}: {resp.text}"
     
 def get_projects():
     if not st.session_state.token:

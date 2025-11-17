@@ -4,6 +4,7 @@ from pages.dashboard import dashboard_page
 from pages.upload_data import upload_data_page
 from pages.query_data import query_data_page
 from pages.generate_reports import reports_page
+from pages.bulk_update import bulk_update_page
 from pages.recycle_questions import recycle_page
 from utils.auth import login
 from utils.state import init_session_state
@@ -30,23 +31,29 @@ def main():
     # ✅ Continue to the rest of your app
     st.sidebar.title("Navigation")
     page = st.sidebar.selectbox("Select Page", 
-                                ["Dashboard", "Upload Data", 
+                                ["Dashboard", 
+                                #  "Upload Data", 
                                 #  "Query Data", 
-                                 "Generate Reports", "Recycle Questions"])
+                                 "Generate Reports",
+                                 "Bulk Assign QA", 
+                                #  "Recycle Questions"
+                                 ])
     if st.sidebar.button("Logout"):
         st.session_state.clear()
         st.rerun()
 
     if page == "Dashboard":
         dashboard_page()
-    elif page == "Upload Data":
-        upload_data_page()
-    elif page == "Query Data":
-        query_data_page()
+    # elif page == "Upload Data":
+    #     upload_data_page()
+    # elif page == "Query Data":
+    #     query_data_page()
+    elif page == "Bulk Assign QA":
+        bulk_update_page()
     elif page == "Generate Reports":
         reports_page()
-    elif page == "Recycle Questions":
-        recycle_page()
+    # elif page == "Recycle Questions":
+    #     recycle_page()
 
 if __name__ == "__main__":
     # init_session_state()

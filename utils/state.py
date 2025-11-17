@@ -13,6 +13,7 @@ def init_session_state():
         "token": None,
         "authenticated": False,
         "user_data": {},
+        "user_data_with_roles":{},
 
         # Data pipeline
         "pipeline_data": {},
@@ -30,6 +31,7 @@ def init_session_state():
         # Upload data page persistence
         "updated_df": None,
         "last_uploaded_file": None,
+        "assignments": {},
         "assignments_applied": False,
     }
 

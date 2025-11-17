@@ -5,23 +5,20 @@ import matplotlib.pyplot as plt
 from config import COMPLETED_STATUS, QA_DONE_STATUS, INCOMPLETE_STATUS, BASE_COLUMNS, USABLE_COLUMNS
 from utils.api import get_projects, get_datasets_by_project, get_dataset_records
 from utils.data_processing import get_performance_tier
-# from streamlit_pandas_profiling import st_profile_report
-# from ydata_profiling import ProfileReport
 from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
+import re
 
-# Cache expensive operations
-# @st.cache_data
+DATE_PATTERN = r"(20\d{6})"  # e.g. 20251116
+
 def load_projects():
     """Load and cache projects data"""
     return get_projects()
 
-# @st.cache_data
 def load_datasets(project_id):
     """Load and cache datasets for a specific project"""
     return get_datasets_by_project(project_id)
 
-# @st.cache_data
 def load_dataset_records(dataset_ids):
     """Load and cache dataset records"""
     return get_dataset_records(dataset_ids)
@@ -177,14 +174,14 @@ def create_visualization(report_df):
     grid_options = gb.build()
 
     st.subheader("🔧 Drag and drop columns to group/pivot")
-    with st.expander("Pivot here"):
-        grid_response = AgGrid(
-            report_df,
-            gridOptions=grid_options,
-            enable_enterprise_modules=True,  # enables pivot & group
-            update_mode="MODEL_CHANGED",
-            theme="streamlit",
-        )
+    grid_response = AgGrid(
+        report_df,
+        gridOptions=grid_options,
+        enable_enterprise_modules=True,  # enables pivot & group
+        update_mode="MODEL_CHANGED",
+        theme="streamlit",
+    )
+        
 
 def create_visualization_streamlit(filtered_df):
     """Visualize numeric/scalar columns using Streamlit charts in 4-column layout."""
@@ -279,6 +276,124 @@ def make_columns_unique(df: pd.DataFrame) -> pd.DataFrame:
             cols[idx] = f"{dup}_{i}"
     df.columns = cols
     return df
+
+
+
+def extract_date_from_dataset(dataset_name: str):
+    """Extract date from dataset_name."""
+    if not isinstance(dataset_name, str):
+        return None
+    m = re.search(DATE_PATTERN, dataset_name)
+    return pd.to_datetime(m.group(1), format="%Y%m%d") if m else None
+
+
+def build_annotator_quality_cycles(
+    df: pd.DataFrame,
+    min_qa_samples_per_cycle: int = 30,
+    min_pass_count_per_cycle: int = 20,
+):
+    """
+    Build cycle-based QA quality report per annotator.
+    Each cycle ends when QA-completed count >= min_qa_samples_per_cycle.
+    """
+
+    # --- PREPARE DATA ---
+    df = df.copy()
+    df["dataset_date"] = df["dataset_name"].apply(extract_date_from_dataset)
+
+    # Filter only completed + QA-done rows
+    df["is_completed"] = df["status"].str.lower().isin(COMPLETED_STATUS)
+    df["is_qa_done"] = df["status"].str.lower().isin(QA_DONE_STATUS)
+
+    result_cycles = []     # One row per CYCLE
+    result_rework = []     # Datasets flagged for rework
+
+    # --- PROCESS PER ANNOTATOR ---
+    for annotator, g_annotator in df.groupby("assignee_name"):
+
+        # Sort datasets chronologically
+        g_annotator = g_annotator.sort_values("dataset_date")
+
+        cycle_id = 1
+        cycle_pass = 0
+        cycle_fail = 0
+        cycle_qa_count = 0
+        cycle_datasets = []
+
+        # Loop by dataset in chronological order
+        for dataset_name, g_ds in g_annotator.groupby("dataset_name"):
+
+            ds_pass = (g_ds["qa_flag"].str.lower() == "pass").sum()
+            ds_fail = (g_ds["qa_flag"].str.lower() == "fail").sum()
+            ds_qa = ds_pass + ds_fail
+
+            # Add into cycle
+            cycle_pass += ds_pass
+            cycle_fail += ds_fail
+            cycle_qa_count += ds_qa
+            cycle_datasets.append(dataset_name)
+
+            # ---- Check if cycle is complete ----
+            if cycle_qa_count >= min_qa_samples_per_cycle:
+                accuracy = (cycle_pass / cycle_qa_count * 100) if cycle_qa_count else 0
+                tier = get_performance_tier(accuracy)
+
+                # Cycle completed → record it
+                result_cycles.append({
+                    "assignee_name": annotator,
+                    "cycle_id": cycle_id,
+                    "cycle_total_qa": cycle_qa_count,
+                    "cycle_pass": cycle_pass,
+                    "cycle_fail": cycle_fail,
+                    "cycle_accuracy": round(accuracy, 2),
+                    "performance_tier": tier,
+                    "datasets_in_cycle": cycle_datasets.copy(),
+                })
+
+                # ---- REWORK LOGIC ----
+                # If pass count < threshold OR accuracy is too low → rework all datasets in this cycle
+                if (cycle_pass < min_pass_count_per_cycle) or (accuracy < 60):
+                # if (cycle_pass < min_pass_count_per_cycle):  
+                    for d in cycle_datasets:
+                        result_rework.append({
+                            "assignee_name": annotator,
+                            "cycle_id": cycle_id,
+                            "dataset_name": d,
+                            "reason": "LOW_PASS_COUNT" if cycle_pass < min_pass_count_per_cycle else "LOW_ACCURACY",
+                            "cycle_accuracy": round(accuracy, 2),
+                            "cycle_pass": cycle_pass,
+                            "cycle_total_qa": cycle_qa_count
+                        })
+
+                # Reset for next cycle
+                cycle_id += 1
+                cycle_pass = 0
+                cycle_fail = 0
+                cycle_qa_count = 0
+                cycle_datasets = []
+
+        # If leftover mini-cycle at end with too few QA → ignore it (incomplete)
+        # --- If leftover cycle has some QA but not enough to meet threshold ---
+        if cycle_qa_count > 0:
+            accuracy = (cycle_pass / cycle_qa_count * 100) if cycle_qa_count else 0
+            tier = get_performance_tier(accuracy)
+
+            result_cycles.append({
+                "assignee_name": annotator,
+                "cycle_id": cycle_id,
+                "cycle_total_qa": cycle_qa_count,
+                "cycle_pass": cycle_pass,
+                "cycle_fail": cycle_fail,
+                "cycle_accuracy": round(accuracy, 2),
+                "performance_tier": tier,
+                "datasets_in_cycle": cycle_datasets.copy(),
+                "is_incomplete_cycle": True
+            })
+
+    df_cycles = pd.DataFrame(result_cycles)
+    df_rework = pd.DataFrame(result_rework)
+
+    return df_cycles, df_rework
 
 
 
@@ -392,7 +507,11 @@ def reports_page():
 
     # --- Visualization ---
     create_visualization(combined_report)
-    create_visualization_streamlit(combined_records)
+    # create_visualization_streamlit(combined_records)
+
+    df_cycles, df_rework = build_annotator_quality_cycles(combined_records,120,90)
+    st.dataframe(df_cycles)
+    st.dataframe(df_rework)
 
 #TODO: data profiling
 #TODO: data builder
